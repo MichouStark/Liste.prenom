@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Choisir le prénom de bébé 👶</title>
+<style>
+  :root{
+    --pink:#f6a6c1;
+    --blue:#a6c8f6;
+    --mint:#a6f6d8;
+    --lav:#c9a6f6;
+    --ink:#2d2a3a;
+    --muted:#736f85;
+    --bg:#faf7fb;
+    --card:#ffffff;
+    --border:#ece7f2;
+    --good:#3fb98a;
+    --shadow:0 6px 20px rgba(90,60,120,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    background:linear-gradient(160deg,#fdf2f7 0%, #f3f6fd 45%, #f1fdf8 100%);
+    color:var(--ink);
+    min-height:100vh;
+  }
+  header{
+    text-align:center;
+    padding:28px 16px 10px;
+  }
+  header h1{
+    margin:0 0 4px;
+    font-size:1.7rem;
+    background:linear-gradient(90deg,var(--pink),var(--lav),var(--blue));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  header p{margin:0;color:var(--muted);font-size:0.95rem;}
+
+  .container{
+    max-width:820px;
+    margin:0 auto;
+    padding:12px 16px 60px;
+  }
+
+  nav.steps{
+    display:flex;
+    gap:6px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin:18px 0 22px;
+  }
+  nav.steps button{
+    border:1px solid var(--border);
+    background:var(--card);
+    color:var(--muted);
+    padding:8px 12px;
+    border-radius:999px;
+    font-size:0.8rem;
+    cursor:pointer;
+    transition:all .15s;
+  }
+  nav.steps button.active{
+    background:linear-gradient(90deg,var(--pink),var(--lav));
+    color:#fff;
+    border-color:transparent;
+    font-weight:600;
+  }
+  nav.steps button:hover:not(.active){background:#f5f0fa;}
+
+  section.card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:24px;
+    box-shadow:var(--shadow);
+    margin-bottom:18px;
+    display:none;
+  }
+  section.card.visible{display:block;}
+  section.card h2{margin-top:0;font-size:1.25rem;}
+  section.card .hint{color:var(--muted);font-size:0.88rem;margin-top:-6px;margin-bottom:16px;}
+
+  label{display:block;font-weight:600;font-size:0.9rem;margin:14px 0 6px;}
+  input[type=text], textarea{
+    width:100%;
+    padding:10px 12px;
+    border:1.5px solid var(--border);
+    border-radius:10px;
+    font-size:0.95rem;
+    font-family:inherit;
+    background:#fdfcff;
+  }
+  input[type=text]:focus, textarea:focus{outline:2px solid var(--lav);border-color:transparent;}
+  textarea{min-height:190px;resize:vertical;line-height:1.6;}
+
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media (max-width:600px){.two-col{grid-template-columns:1fr;}}
+
+  .counter{font-size:0.78rem;color:var(--muted);text-align:right;margin-top:2px;}
+  .counter.over{color:#e0576b;font-weight:600;}
+
+  .btn{
+    border:none;
+    padding:11px 18px;
+    border-radius:10px;
+    font-size:0.92rem;
+    font-weight:600;
+    cursor:pointer;
+    color:#fff;
+    background:linear-gradient(90deg,var(--pink),var(--lav));
+    margin-top:16px;
+  }
+  .btn:hover{filter:brightness(1.05);}
+  .btn.secondary{
+    background:#fff;
+    color:var(--ink);
+    border:1.5px solid var(--border);
+  }
+  .btn.small{padding:7px 12px;font-size:0.8rem;margin-top:0;}
+  .btn:disabled{opacity:0.5;cursor:not-allowed;}
+  .row-btns{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+
+  .banner{
+    background:#fff7e6;
+    border:1px solid #f6dfa0;
+    padding:14px 16px;
+    border-radius:12px;
+    margin-bottom:16px;
+    font-size:0.9rem;
+  }
+  .banner.import{background:#eaf6ff;border-color:#a6c8f6;}
+  .banner.warn{background:#fdeeee;border-color:#f3b6b6;}
+
+  .placeholder{
+    text-align:center;
+    padding:30px 10px;
+    color:var(--muted);
+  }
+  .placeholder a{color:var(--lav);cursor:pointer;text-decoration:underline;}
+
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 12px;
+    border-radius:999px;
+    background:#f5f0fa;
+    font-size:0.85rem;
+    margin:3px 4px 3px 0;
+  }
+  .pill.common{background:linear-gradient(90deg,#fde3ec,#efe3fd);font-weight:700;}
+  .pill.common::before{content:"❤️";}
+
+  .group-title{
+    font-size:0.85rem;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    color:var(--muted);
+    margin:18px 0 6px;
+    font-weight:700;
+  }
+
+  .name-list{display:flex;flex-wrap:wrap;}
+
+  .check-list{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+  .check-list label{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:500;
+    background:#fbfaff;
+    border:1px solid var(--border);
+    padding:8px 12px;
+    border-radius:10px;
+    margin:0;
+    cursor:pointer;
+  }
+  .check-list label.common{border-color:var(--pink);background:#fff5f9;}
+  .check-list input{width:16px;height:16px;}
+  .badge-common{margin-left:auto;font-size:0.75rem;color:var(--pink);font-weight:700;}
+
+  textarea.share-code{min-height:90px;font-family:monospace;font-size:0.78rem;}
+
+  .recap-box{
+    border:2px dashed var(--pink);
+    border-radius:14px;
+    padding:18px;
+    text-align:center;
+    margin-top:14px;
+  }
+  .recap-box .name{
+    font-size:1.4rem;
+    font-weight:800;
+    background:linear-gradient(90deg,var(--pink),var(--lav));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    margin:4px 8px;
+    display:inline-block;
+  }
+
+  .status-line{font-size:0.85rem;color:var(--muted);margin-top:10px;}
+  .ok{color:var(--good);font-weight:700;}
+
+  footer{text-align:center;color:var(--muted);font-size:0.8rem;padding:20px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>👶 Le prénom de bébé</h1>
+  <p>Confrontez vos listes, trouvez vos prénoms en commun, et choisissez ensemble.</p>
+</header>
+
+<div class="container">
+
+  <div id="import-banner"></div>
+
+  <nav class="steps">
+    <button data-step="name">1. Profil</button>
+    <button data-step="lists">2. Mes listes</button>
+    <button data-step="share">3. Partager</button>
+    <button data-step="compare">4. Comparaison</button>
+    <button data-step="final">5. Choix final</button>
+    <button data-step="recap">6. Récap</button>
+  </nav>
+
+  <!-- STEP 1: NAME -->
+  <section class="card" id="step-name">
+    <h2>Qui es-tu ?</h2>
+    <p class="hint">Renseigne ton prénom pour commencer.</p>
+    <label for="my-name">Ton prénom</label>
+    <input type="text" id="my-name" placeholder="Ex : Camille">
+    <div class="row-btns">
+      <button class="btn" id="save-name">Continuer →</button>
+      <button class="btn secondary small" id="reset-all">Réinitialiser mes données</button>
+    </div>
+    <p class="status-line" id="name-status"></p>
+  </section>
+
+  <!-- STEP 2: LISTS -->
+  <section class="card" id="step-lists">
+    <h2>Tes 10 prénoms filles et 10 prénoms garçons</h2>
+    <p class="hint">Un prénom par ligne, idéalement 10 dans chaque liste.</p>
+    <div class="two-col">
+      <div>
+        <label for="my-girls">💗 Prénoms filles</label>
+        <textarea id="my-girls" placeholder="Emma&#10;Alice&#10;..."></textarea>
+        <div class="counter" id="girls-counter">0 / 10</div>
+      </div>
+      <div>
+        <label for="my-boys">💙 Prénoms garçons</label>
+        <textarea id="my-boys" placeholder="Louis&#10;Gabriel&#10;..."></textarea>
+        <div class="counter" id="boys-counter">0 / 10</div>
+      </div>
+    </div>
+    <div class="row-btns">
+      <button class="btn" id="save-lists">Enregistrer et continuer →</button>
+    </div>
+  </section>
+
+  <!-- STEP 3: SHARE -->
+  <section class="card" id="step-share">
+    <h2>Partage ta liste</h2>
+    <p class="hint">Envoie ce lien (ou ce code) à ton/ta partenaire. Iel n'a qu'à l'ouvrir dans son navigateur.</p>
+
+    <label>Ton lien à partager</label>
+    <textarea class="share-code" id="share-link" readonly></textarea>
+    <div class="row-btns">
+      <button class="btn small" id="copy-link">📋 Copier le lien</button>
+      <button class="btn secondary small" id="copy-code">Copier juste le code</button>
+    </div>
+
+    <label style="margin-top:24px;">Coller le code reçu de ton/ta partenaire</label>
+    <textarea class="share-code" id="import-code" placeholder="Colle ici le code reçu si tu n'as pas cliqué sur le lien directement"></textarea>
+    <div class="row-btns">
+      <button class="btn" id="import-btn">Importer</button>
+    </div>
+    <p class="status-line" id="partner-status"></p>
+  </section>
+
+  <!-- STEP 4: COMPARE -->
+  <section class="card" id="step-compare">
+    <h2>Comparaison des listes</h2>
+    <div id="compare-content"></div>
+  </section>
+
+  <!-- STEP 5: FINAL -->
+  <section class="card" id="step-final">
+    <h2>Choix final</h2>
+    <p class="hint">Sélectionnez ensemble au maximum <strong>2 prénoms filles</strong> et <strong>2 prénoms garçons</strong>.</p>
+    <div id="final-content"></div>
+  </section>
+
+  <!-- STEP 6: RECAP -->
+  <section class="card" id="step-recap">
+    <h2>Récapitulatif</h2>
+    <div id="recap-content"></div>
+  </section>
+
+</div>
+
+<footer>Fait avec 💕 — toutes les données restent dans votre navigateur, rien n'est envoyé sur un serveur.</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- storage helpers ----------
+  const LS_ME = 'pp_me';
+  const LS_PARTNER = 'pp_partner';
+
+  function loadMe(){ try{ return JSON.parse(localStorage.getItem(LS_ME)) || null; }catch(e){ return null; } }
+  function saveMe(me){ localStorage.setItem(LS_ME, JSON.stringify(me)); }
+  function loadPartner(){ try{ return JSON.parse(localStorage.getItem(LS_PARTNER)) || null; }catch(e){ return null; } }
+  function savePartner(p){ localStorage.setItem(LS_PARTNER, JSON.stringify(p)); }
+
+  function emptyMe(){ return { name:'', girls:[], boys:[], finalGirls:[], finalBoys:[] }; }
+
+  let me = loadMe() || emptyMe();
+  let partner = loadPartner();
+
+  // ---------- base64 unicode-safe encode/decode ----------
+  function toBase64(obj){
+    const json = JSON.stringify(obj);
+    const bytes = new TextEncoder().encode(json);
+    let binary = '';
+    bytes.forEach(b => binary += String.fromCharCode(b));
+    return btoa(binary);
+  }
+  function fromBase64(b64){
+    const binary = atob(b64);
+    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+    const json = new TextDecoder().decode(bytes);
+    return JSON.parse(json);
+  }
+
+  function norm(s){
+    return (s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  }
+  function titleCase(s){
+    s = s.trim();
+    if(!s) return s;
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  // ---------- navigation ----------
+  const steps = ['name','lists','share','compare','final','recap'];
+  const navButtons = {};
+  document.querySelectorAll('nav.steps button').forEach(b=>{
+    navButtons[b.dataset.step] = b;
+    b.addEventListener('click', ()=> showStep(b.dataset.step));
+  });
+
+  function showStep(step){
+    steps.forEach(s=>{
+      document.getElementById('step-'+s).classList.toggle('visible', s===step);
+      navButtons[s].classList.toggle('active', s===step);
+    });
+    if(step==='share') renderShare();
+    if(step==='compare') renderCompare();
+    if(step==='final') renderFinal();
+    if(step==='recap') renderRecap();
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  // ---------- STEP 1: name ----------
+  const myNameInput = document.getElementById('my-name');
+  const nameStatus = document.getElementById('name-status');
+
+  function refreshNameUI(){
+    myNameInput.value = me.name || '';
+    nameStatus.textContent = me.name ? `Connecté·e en tant que ${me.name}.` : '';
+  }
+
+  document.getElementById('save-name').addEventListener('click', ()=>{
+    const v = myNameInput.value.trim();
+    if(!v){ nameStatus.textContent = "Merci d'indiquer un prénom."; nameStatus.className='status-line'; return; }
+    me.name = v;
+    saveMe(me);
+    nameStatus.textContent = `Bienvenue ${v} ! Passons à tes listes.`;
+    nameStatus.className = 'status-line ok';
+    showStep('lists');
+  });
+
+  document.getElementById('reset-all').addEventListener('click', ()=>{
+    if(confirm("Réinitialiser toutes tes données locales (ton prénom, tes listes, ton choix final) ? Cette action est irréversible.")){
+      localStorage.removeItem(LS_ME);
+      localStorage.removeItem(LS_PARTNER);
+      me = emptyMe();
+      partner = null;
+      refreshAllUI();
+      showStep('name');
+    }
+  });
+
+  // ---------- STEP 2: lists ----------
+  const girlsTextarea = document.getElementById('my-girls');
+  const boysTextarea = document.getElementById('my-boys');
+  const girlsCounter = document.getElementById('girls-counter');
+  const boysCounter = document.getElementById('boys-counter');
+
+  function linesOf(textarea){
+    return textarea.value.split('\n').map(s=>s.trim()).filter(Boolean);
+  }
+  function updateCounter(textarea, counterEl){
+    const n = linesOf(textarea).length;
+    counterEl.textContent = `${n} / 10`;
+    counterEl.classList.toggle('over', n > 10);
+  }
+  girlsTextarea.addEventListener('input', ()=> updateCounter(girlsTextarea, girlsCounter));
+  boysTextarea.addEventListener('input', ()=> updateCounter(boysTextarea, boysCounter));
+
+  function refreshListsUI(){
+    girlsTextarea.value = (me.girls||[]).join('\n');
+    boysTextarea.value = (me.boys||[]).join('\n');
+    updateCounter(girlsTextarea, girlsCounter);
+    updateCounter(boysTextarea, boysCounter);
+  }
+
+  document.getElementById('save-lists').addEventListener('click', ()=>{
+    if(!me.name){ alert("Indique d'abord ton prénom (étape 1)."); showStep('name'); return; }
+    me.girls = linesOf(girlsTextarea).map(titleCase);
+    me.boys = linesOf(boysTextarea).map(titleCase);
+    saveMe(me);
+    showStep('share');
+  });
+
+  // ---------- STEP 3: share / import ----------
+  const shareLinkEl = document.getElementById('share-link');
+  const importCodeEl = document.getElementById('import-code');
+  const partnerStatus = document.getElementById('partner-status');
+
+  function currentShareCode(){
+    return toBase64({
+      n: me.name, g: me.girls||[], b: me.boys||[],
+      fg: me.finalGirls||[], fb: me.finalBoys||[]
+    });
+  }
+
+  function baseUrl(){
+    return location.origin + location.pathname;
+  }
+
+  function renderShare(){
+    if(!me.name || !(me.girls||[]).length){
+      document.getElementById('step-share').querySelector('.hint').textContent =
+        "Complète d'abord ton prénom et tes listes (étapes 1 et 2).";
+    }
+    const code = currentShareCode();
+    shareLinkEl.value = baseUrl() + '#import=' + code;
+    partnerStatus.innerHTML = partner
+      ? `<span class="ok">✓ Liste de ${partner.n || partner.name} déjà importée.</span> Tu peux la mettre à jour en collant un nouveau code.`
+      : "Aucune liste partenaire importée pour le moment.";
+  }
+
+  function copyToClipboard(text){
+    if(navigator.clipboard && window.isSecureContext){
+      return navigator.clipboard.writeText(text);
+    }
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta);
+    return Promise.resolve();
+  }
+
+  document.getElementById('copy-link').addEventListener('click', ()=>{
+    copyToClipboard(shareLinkEl.value).then(()=> flashStatus(partnerStatus, "Lien copié ! Envoie-le à ton/ta partenaire."));
+  });
+  document.getElementById('copy-code').addEventListener('click', ()=>{
+    copyToClipboard(currentShareCode()).then(()=> flashStatus(partnerStatus, "Code copié !"));
+  });
+
+  function flashStatus(el, msg){
+    el.innerHTML = `<span class="ok">${msg}</span>`;
+  }
+
+  function importFromCode(code){
+    try{
+      const data = fromBase64(code.trim());
+      if(!data || !data.n) throw new Error('invalid');
+      partner = { name: data.n, girls: data.g||[], boys: data.b||[], finalGirls: data.fg||[], finalBoys: data.fb||[] };
+      savePartner(partner);
+      return true;
+    }catch(e){
+      return false;
+    }
+  }
+
+  document.getElementById('import-btn').addEventListener('click', ()=>{
+    const code = importCodeEl.value.trim();
+    if(!code){ partnerStatus.textContent = "Colle d'abord un code."; return; }
+    if(importFromCode(code)){
+      importCodeEl.value = '';
+      renderShare();
+      flashStatus(partnerStatus, `Liste de ${partner.name} importée avec succès !`);
+    } else {
+      partnerStatus.innerHTML = `<span style="color:#e0576b;">Code invalide, vérifie qu'il est complet.</span>`;
+    }
+  });
+
+  // auto-import from URL hash
+  function checkUrlImport(){
+    const hash = location.hash;
+    const m = hash.match(/#import=(.+)/);
+    if(!m) return;
+    try{
+      const data = fromBase64(decodeURIComponent(m[1]));
+      if(!data || !data.n) return;
+      const banner = document.getElementById('import-banner');
+      banner.innerHTML = `
+        <div class="banner import">
+          📥 <strong>${escapeHtml(data.n)}</strong> a partagé sa liste avec toi.
+          <div class="row-btns" style="margin-top:8px;">
+            <button class="btn small" id="accept-import">Importer sa liste</button>
+            <button class="btn secondary small" id="dismiss-import">Ignorer</button>
+          </div>
+        </div>`;
+      document.getElementById('accept-import').addEventListener('click', ()=>{
+        importFromCode(m[1]);
+        history.replaceState(null, '', baseUrl());
+        banner.innerHTML = '';
+        refreshAllUI();
+        showStep('compare');
+      });
+      document.getElementById('dismiss-import').addEventListener('click', ()=>{
+        banner.innerHTML = '';
+        history.replaceState(null, '', baseUrl());
+      });
+    }catch(e){ /* ignore malformed hash */ }
+  }
+
+  function escapeHtml(s){
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  // ---------- STEP 4: compare ----------
+  function matchSets(listA, listB){
+    const common = [];
+    const onlyA = [];
+    const usedB = new Set();
+    listA.forEach(nameA=>{
+      const idx = listB.findIndex((nameB,i)=> !usedB.has(i) && norm(nameB)===norm(nameA));
+      if(idx>-1){ common.push(nameA); usedB.add(idx); }
+      else onlyA.push(nameA);
+    });
+    const onlyB = listB.filter((_,i)=>!usedB.has(i));
+    return {common, onlyA, onlyB};
+  }
+
+  function renderCompare(){
+    const el = document.getElementById('compare-content');
+    if(!me.name || !(me.girls||[]).length){
+      el.innerHTML = `<div class="placeholder">Complète d'abord tes listes. <a onclick="void 0">Aller à l'étape 2</a></div>`;
+      el.querySelector('a').addEventListener('click', ()=>showStep('lists'));
+      return;
+    }
+    if(!partner){
+      el.innerHTML = `<div class="placeholder">Importe la liste de ton/ta partenaire pour voir la comparaison. <a>Aller à l'étape 3</a></div>`;
+      el.querySelector('a').addEventListener('click', ()=>showStep('share'));
+      return;
+    }
+
+    const g = matchSets(me.girls||[], partner.girls||[]);
+    const b = matchSets(me.boys||[], partner.boys||[]);
+
+    function block(title, emoji, res, meLabel, partnerLabel){
+      return `
+        <h3 style="margin-bottom:2px;">${emoji} ${title}</h3>
+        <div class="group-title">En commun (${res.common.length})</div>
+        <div class="name-list">${res.common.length ? res.common.map(n=>`<span class="pill common">${escapeHtml(n)}</span>`).join('') : '<span class="hint">Aucun prénom en commun pour le moment.</span>'}</div>
+        <div class="group-title">Seulement ${escapeHtml(meLabel)} (${res.onlyA.length})</div>
+        <div class="name-list">${res.onlyA.map(n=>`<span class="pill">${escapeHtml(n)}</span>`).join('') || '<span class="hint">—</span>'}</div>
+        <div class="group-title">Seulement ${escapeHtml(partnerLabel)} (${res.onlyB.length})</div>
+        <div class="name-list">${res.onlyB.map(n=>`<span class="pill">${escapeHtml(n)}</span>`).join('') || '<span class="hint">—</span>'}</div>
+      `;
+    }
+
+    el.innerHTML = `
+      <p class="hint">Comparaison entre ${escapeHtml(me.name)} et ${escapeHtml(partner.name)}.</p>
+      <div class="two-col">
+        <div>${block('Filles', '💗', g, me.name, partner.name)}</div>
+        <div>${block('Garçons', '💙', b, me.name, partner.name)}</div>
+      </div>
+      <div class="row-btns" style="margin-top:20px;">
+        <button class="btn" id="go-final">Passer au choix final →</button>
+      </div>
+    `;
+    document.getElementById('go-final').addEventListener('click', ()=> showStep('final'));
+  }
+
+  // ---------- STEP 5: final choice ----------
+  function unionPool(listA, listB){
+    const seen = new Map(); // normKey -> {label, common}
+    listA.forEach(n=>{
+      const k = norm(n);
+      seen.set(k, {label:n, common:false});
+    });
+    listB.forEach(n=>{
+      const k = norm(n);
+      if(seen.has(k)) seen.get(k).common = true;
+      else seen.set(k, {label:n, common:false});
+    });
+    return Array.from(seen.values()).sort((x,y)=>{
+      if(x.common !== y.common) return x.common ? -1 : 1;
+      return x.label.localeCompare(y.label,'fr');
+    });
+  }
+
+  function renderFinal(){
+    const el = document.getElementById('final-content');
+    if(!me.name || !(me.girls||[]).length){
+      el.innerHTML = `<div class="placeholder">Complète d'abord tes listes. <a>Aller à l'étape 2</a></div>`;
+      el.querySelector('a').addEventListener('click', ()=>showStep('lists'));
+      return;
+    }
+    const partnerGirls = partner ? partner.girls||[] : [];
+    const partnerBoys = partner ? partner.boys||[] : [];
+    const girlPool = unionPool(me.girls||[], partnerGirls);
+    const boyPool = unionPool(me.boys||[], partnerBoys);
+
+    function checklist(pool, groupName, currentSelection){
+      return pool.map(item=>{
+        const checked = currentSelection.some(s=>norm(s)===norm(item.label));
+        return `<label class="${item.common?'common':''}">
+          <input type="checkbox" data-group="${groupName}" value="${escapeHtml(item.label)}" ${checked?'checked':''}>
+          ${escapeHtml(item.label)}
+          ${item.common?'<span class="badge-common">en commun ❤️</span>':''}
+        </label>`;
+      }).join('');
+    }
+
+    el.innerHTML = `
+      ${!partner ? '<div class="banner warn">⚠️ Tu n\'as pas encore importé la liste de ton/ta partenaire — ceci n\'affichera que tes propres prénoms.</div>' : ''}
+      <div class="two-col">
+        <div>
+          <div class="group-title">💗 Filles — choisis jusqu'à 2</div>
+          <div class="check-list" id="girls-check">${checklist(girlPool,'girls', me.finalGirls||[])}</div>
+        </div>
+        <div>
+          <div class="group-title">💙 Garçons — choisis jusqu'à 2</div>
+          <div class="check-list" id="boys-check">${checklist(boyPool,'boys', me.finalBoys||[])}</div>
+        </div>
+      </div>
+      <div class="row-btns" style="margin-top:20px;">
+        <button class="btn" id="save-final">Valider le choix final</button>
+      </div>
+      <p class="status-line" id="final-status"></p>
+    `;
+
+    function enforceLimit(group){
+      const boxes = el.querySelectorAll(`input[data-group="${group}"]`);
+      const checkedBoxes = Array.from(boxes).filter(b=>b.checked);
+      boxes.forEach(b=>{ b.disabled = checkedBoxes.length>=2 && !b.checked; });
+    }
+    ['girls','boys'].forEach(group=>{
+      enforceLimit(group);
+      el.querySelectorAll(`input[data-group="${group}"]`).forEach(b=>{
+        b.addEventListener('change', ()=> enforceLimit(group));
+      });
+    });
+
+    document.getElementById('save-final').addEventListener('click', ()=>{
+      me.finalGirls = Array.from(el.querySelectorAll('input[data-group="girls"]:checked')).map(b=>b.value);
+      me.finalBoys = Array.from(el.querySelectorAll('input[data-group="boys"]:checked')).map(b=>b.value);
+      saveMe(me);
+      const status = document.getElementById('final-status');
+      status.innerHTML = '<span class="ok">Choix enregistré ! N\'oublie pas de repartager ton code (étape 3) si tu veux que ton/ta partenaire voie ton choix.</span>';
+      renderShare();
+    });
+  }
+
+  // ---------- STEP 6: recap ----------
+  function renderRecap(){
+    const el = document.getElementById('recap-content');
+    const myFinalG = me.finalGirls||[], myFinalB = me.finalBoys||[];
+    const partnerFinalG = partner ? (partner.finalGirls||[]) : [];
+    const partnerFinalB = partner ? (partner.finalBoys||[]) : [];
+
+    if(!myFinalG.length && !myFinalB.length){
+      el.innerHTML = `<div class="placeholder">Fais d'abord ton choix final. <a>Aller à l'étape 5</a></div>`;
+      el.querySelector('a').addEventListener('click', ()=>showStep('final'));
+      return;
+    }
+
+    function agreement(mine, theirs){
+      return mine.filter(n=> theirs.some(t=>norm(t)===norm(n)));
+    }
+    const agreedGirls = agreement(myFinalG, partnerFinalG);
+    const agreedBoys = agreement(myFinalB, partnerFinalB);
+
+    function side(title, mine, theirs, partnerName){
+      return `
+        <div class="group-title">${title} — choix de ${escapeHtml(me.name||'toi')}</div>
+        <div class="name-list">${mine.map(n=>`<span class="pill">${escapeHtml(n)}</span>`).join('') || '<span class="hint">Aucun</span>'}</div>
+        ${partner ? `
+        <div class="group-title">${title} — choix de ${escapeHtml(partnerName)}</div>
+        <div class="name-list">${theirs.length ? theirs.map(n=>`<span class="pill">${escapeHtml(n)}</span>`).join('') : '<span class="hint">Pas encore partagé / choisi</span>'}</div>
+        ` : ''}
+      `;
+    }
+
+    let celebration = '';
+    if(partner && (agreedGirls.length || agreedBoys.length)){
+      celebration = `
+        <div class="recap-box">
+          <div>🎉 Vous êtes d'accord sur :</div>
+          ${agreedGirls.map(n=>`<span class="name">${escapeHtml(n)}</span>`).join('')}
+          ${agreedBoys.map(n=>`<span class="name">${escapeHtml(n)}</span>`).join('')}
+        </div>`;
+    } else if(partner){
+      celebration = `<div class="banner warn">Vos choix ne se recoupent pas encore parfaitement — comparez et discutez-en ! Pense à réimporter le dernier code de ton/ta partenaire si iel vient de valider son choix.</div>`;
+    } else {
+      celebration = `<div class="banner">Importe le code final de ton/ta partenaire (étape 3) pour comparer vos choix.</div>`;
+    }
+
+    el.innerHTML = `
+      ${celebration}
+      <div class="two-col" style="margin-top:10px;">
+        <div>${side('💗 Filles', myFinalG, partnerFinalG, partner?partner.name:'')}</div>
+        <div>${side('💙 Garçons', myFinalB, partnerFinalB, partner?partner.name:'')}</div>
+      </div>
+    `;
+  }
+
+  // ---------- init ----------
+  function refreshAllUI(){
+    refreshNameUI();
+    refreshListsUI();
+  }
+
+  checkUrlImport();
+  refreshAllUI();
+
+  if(!me.name){
+    showStep('name');
+  } else if(!(me.girls||[]).length){
+    showStep('lists');
+  } else {
+    showStep('share');
+  }
+})();
+</script>
+</body>
+</html>
