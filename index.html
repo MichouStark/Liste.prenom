@@ -234,6 +234,23 @@
   .ok{color:var(--good);font-weight:700;}
 
   footer{text-align:center;color:var(--muted);font-size:0.8rem;padding:20px;}
+
+  .autosave-badge{
+    position:fixed;
+    bottom:16px;
+    right:16px;
+    background:var(--ink);
+    color:#fff;
+    padding:8px 14px;
+    border-radius:999px;
+    font-size:0.78rem;
+    opacity:0;
+    transform:translateY(8px);
+    transition:opacity .25s, transform .25s;
+    pointer-events:none;
+    z-index:50;
+  }
+  .autosave-badge.show{opacity:0.92;transform:translateY(0);}
 </style>
 </head>
 <body>
@@ -332,6 +349,16 @@
     <h2>Tri : à garder ou à éliminer ?</h2>
     <p class="hint">Marque chaque prénom, même s'il n'est pas en commun — un prénom gardé par l'un de vous reste en lice pour le choix final. Un prénom éliminé par l'un de vous disparaît de la sélection finale.</p>
     <div id="sort-content"></div>
+    <div class="row-btns" style="margin-top:14px;">
+      <button class="btn secondary small" id="export-btn-sort">📋 Exporter la liste complète</button>
+    </div>
+    <div id="export-box-sort" style="display:none; margin-top:12px;">
+      <textarea class="share-code" id="export-text-sort" readonly style="min-height:220px;"></textarea>
+      <div class="row-btns">
+        <button class="btn small" id="export-copy-sort">Copier le texte</button>
+        <button class="btn secondary small" id="export-download-sort">⬇️ Télécharger .txt</button>
+      </div>
+    </div>
   </section>
 
   <!-- STEP 6: FINAL -->
@@ -350,6 +377,7 @@
 </div>
 
 <footer>Fait avec 💕 — toutes les données restent dans votre navigateur, rien n'est envoyé sur un serveur.</footer>
+<div id="autosave-badge" class="autosave-badge"></div>
 
 <script>
 (function(){
@@ -360,9 +388,24 @@
   const LS_PARTNER = 'pp_partner';
 
   function loadMe(){ try{ return JSON.parse(localStorage.getItem(LS_ME)) || null; }catch(e){ return null; } }
-  function saveMe(me){ localStorage.setItem(LS_ME, JSON.stringify(me)); }
+  function saveMe(me){ localStorage.setItem(LS_ME, JSON.stringify(me)); flashAutosave('💾 Enregistré dans ce navigateur'); }
   function loadPartner(){ try{ return JSON.parse(localStorage.getItem(LS_PARTNER)) || null; }catch(e){ return null; } }
-  function savePartner(p){ localStorage.setItem(LS_PARTNER, JSON.stringify(p)); }
+  function savePartner(p){ localStorage.setItem(LS_PARTNER, JSON.stringify(p)); flashAutosave('💾 Liste partenaire enregistrée'); }
+
+  let autosaveTimer;
+  function flashAutosave(message){
+    const el = document.getElementById('autosave-badge');
+    if(!el) return;
+    el.textContent = message;
+    el.classList.add('show');
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(()=> el.classList.remove('show'), 1400);
+  }
+
+  function debounce(fn, delay){
+    let t;
+    return (...args)=>{ clearTimeout(t); t = setTimeout(()=> fn(...args), delay); };
+  }
 
   function emptyMe(){ return { name:'', girls:[], boys:[], finalGirls:[], finalBoys:[], decisions:{girls:{}, boys:{}} }; }
 
@@ -435,6 +478,12 @@
     showStep('lists');
   });
 
+  const autosaveName = debounce(()=>{
+    const v = myNameInput.value.trim();
+    if(v){ me.name = v; saveMe(me); }
+  }, 600);
+  myNameInput.addEventListener('input', autosaveName);
+
   document.getElementById('reset-all').addEventListener('click', ()=>{
     if(confirm("Réinitialiser toutes tes données locales (ton prénom, tes listes, ton choix final) ? Cette action est irréversible.")){
       localStorage.removeItem(LS_ME);
@@ -460,8 +509,13 @@
     counterEl.textContent = `${n} / 10`;
     counterEl.classList.toggle('over', n > 10);
   }
-  girlsTextarea.addEventListener('input', ()=> updateCounter(girlsTextarea, girlsCounter));
-  boysTextarea.addEventListener('input', ()=> updateCounter(boysTextarea, boysCounter));
+  const autosaveLists = debounce(()=>{
+    me.girls = linesOf(girlsTextarea).map(titleCase);
+    me.boys = linesOf(boysTextarea).map(titleCase);
+    saveMe(me);
+  }, 700);
+  girlsTextarea.addEventListener('input', ()=>{ updateCounter(girlsTextarea, girlsCounter); autosaveLists(); });
+  boysTextarea.addEventListener('input', ()=>{ updateCounter(boysTextarea, boysCounter); autosaveLists(); });
 
   function refreshListsUI(){
     girlsTextarea.value = (me.girls||[]).join('\n');
@@ -688,26 +742,37 @@
     return lines.join('\n');
   }
 
-  document.getElementById('export-btn').addEventListener('click', ()=>{
-    if(!me.name || !(me.girls||[]).length){ alert("Complète d'abord ton prénom et tes listes (étapes 1 et 2)."); showStep('lists'); return; }
-    document.getElementById('export-text').value = buildExportText();
-    document.getElementById('export-box').style.display = 'block';
-  });
-  document.getElementById('export-copy').addEventListener('click', ()=>{
-    copyToClipboard(document.getElementById('export-text').value);
-  });
-  document.getElementById('export-download').addEventListener('click', ()=>{
-    const text = document.getElementById('export-text').value;
-    const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'prenoms-' + norm(me.name||'liste').replace(/\s+/g,'-') + '.txt';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  });
+  function wireExportButtons(suffix){
+    const btn = document.getElementById('export-btn' + suffix);
+    const box = document.getElementById('export-box' + suffix);
+    const textEl = document.getElementById('export-text' + suffix);
+    const copyBtn = document.getElementById('export-copy' + suffix);
+    const downloadBtn = document.getElementById('export-download' + suffix);
+    if(!btn) return;
+
+    btn.addEventListener('click', ()=>{
+      if(!me.name || !(me.girls||[]).length){ alert("Complète d'abord ton prénom et tes listes (étapes 1 et 2)."); showStep('lists'); return; }
+      textEl.value = buildExportText();
+      box.style.display = 'block';
+    });
+    copyBtn.addEventListener('click', ()=>{
+      copyToClipboard(textEl.value);
+    });
+    downloadBtn.addEventListener('click', ()=>{
+      const text = textEl.value;
+      const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'prenoms-' + norm(me.name||'liste').replace(/\s+/g,'-') + '.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  }
+  wireExportButtons('');
+  wireExportButtons('-sort');
 
   // ---------- STEP 5: sort (garder / éliminer) ----------
   function unionPool(listA, listB){

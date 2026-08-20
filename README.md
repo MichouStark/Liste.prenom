@@ -15,7 +15,7 @@ Petite application web (un seul fichier `index.html`, sans serveur ni base de do
 
 ## Comment ça marche techniquement
 
-- Toutes les données restent **dans le navigateur** (`localStorage`), rien n'est envoyé sur un serveur.
+- Toutes les données restent **dans le navigateur** (`localStorage`) et sont enregistrées automatiquement au fur et à mesure de la saisie (un petit badge "💾 Enregistré" confirme la sauvegarde) — rien n'est envoyé sur un serveur.
 - Le partage se fait via un **lien contenant vos données encodées** (après le `#import=`), pas besoin de backend ni de compte.
 - Vous pouvez héberger ce fichier tel quel sur GitHub Pages pour avoir un lien stable, ou simplement vous l'envoyer par e-mail/message et l'ouvrir localement.
 
