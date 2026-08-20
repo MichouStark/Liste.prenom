@@ -185,6 +185,35 @@
 
   textarea.share-code{min-height:90px;font-family:monospace;font-size:0.78rem;}
 
+  .sort-summary{font-size:0.85rem;color:var(--muted);margin:2px 0 12px;}
+  .sort-row{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:8px 10px;
+    padding:10px 12px;
+    border:1.5px solid var(--border);
+    border-radius:10px;
+    margin-bottom:8px;
+    background:#fbfaff;
+  }
+  .sort-row.disagree{border-color:#f3b6b6;background:#fff7f7;}
+  .sort-name{font-weight:600;flex:1 1 130px;}
+  .sort-actions{display:flex;gap:6px;flex:0 0 auto;}
+  .tri-btn{
+    border:1.5px solid var(--border);
+    background:#fff;
+    padding:6px 10px;
+    border-radius:8px;
+    font-size:0.78rem;
+    cursor:pointer;
+    font-weight:700;
+    color:var(--muted);
+  }
+  .tri-btn.keep.active{background:#e3f9ef;border-color:var(--good);color:var(--good);}
+  .tri-btn.eliminate.active{background:#fdeeee;border-color:#e0576b;color:#e0576b;}
+  .sort-partner{font-size:0.75rem;color:var(--muted);flex:1 0 100%;}
+
   .recap-box{
     border:2px dashed var(--pink);
     border-radius:14px;
@@ -223,8 +252,9 @@
     <button data-step="lists">2. Mes listes</button>
     <button data-step="share">3. Partager</button>
     <button data-step="compare">4. Comparaison</button>
-    <button data-step="final">5. Choix final</button>
-    <button data-step="recap">6. Récap</button>
+    <button data-step="sort">5. Tri</button>
+    <button data-step="final">6. Choix final</button>
+    <button data-step="recap">7. Récap</button>
   </nav>
 
   <!-- STEP 1: NAME -->
@@ -285,16 +315,33 @@
   <section class="card" id="step-compare">
     <h2>Comparaison des listes</h2>
     <div id="compare-content"></div>
+    <div class="row-btns" style="margin-top:14px;">
+      <button class="btn secondary small" id="export-btn">📋 Exporter la liste complète</button>
+    </div>
+    <div id="export-box" style="display:none; margin-top:12px;">
+      <textarea class="share-code" id="export-text" readonly style="min-height:220px;"></textarea>
+      <div class="row-btns">
+        <button class="btn small" id="export-copy">Copier le texte</button>
+        <button class="btn secondary small" id="export-download">⬇️ Télécharger .txt</button>
+      </div>
+    </div>
   </section>
 
-  <!-- STEP 5: FINAL -->
+  <!-- STEP 5: SORT (garder / éliminer) -->
+  <section class="card" id="step-sort">
+    <h2>Tri : à garder ou à éliminer ?</h2>
+    <p class="hint">Marque chaque prénom, même s'il n'est pas en commun — un prénom gardé par l'un de vous reste en lice pour le choix final. Un prénom éliminé par l'un de vous disparaît de la sélection finale.</p>
+    <div id="sort-content"></div>
+  </section>
+
+  <!-- STEP 6: FINAL -->
   <section class="card" id="step-final">
     <h2>Choix final</h2>
     <p class="hint">Sélectionnez ensemble au maximum <strong>2 prénoms filles</strong> et <strong>2 prénoms garçons</strong>.</p>
     <div id="final-content"></div>
   </section>
 
-  <!-- STEP 6: RECAP -->
+  <!-- STEP 7: RECAP -->
   <section class="card" id="step-recap">
     <h2>Récapitulatif</h2>
     <div id="recap-content"></div>
@@ -317,10 +364,12 @@
   function loadPartner(){ try{ return JSON.parse(localStorage.getItem(LS_PARTNER)) || null; }catch(e){ return null; } }
   function savePartner(p){ localStorage.setItem(LS_PARTNER, JSON.stringify(p)); }
 
-  function emptyMe(){ return { name:'', girls:[], boys:[], finalGirls:[], finalBoys:[] }; }
+  function emptyMe(){ return { name:'', girls:[], boys:[], finalGirls:[], finalBoys:[], decisions:{girls:{}, boys:{}} }; }
 
   let me = loadMe() || emptyMe();
+  if(!me.decisions) me.decisions = {girls:{}, boys:{}};
   let partner = loadPartner();
+  if(partner && !partner.decisions) partner.decisions = {girls:{}, boys:{}};
 
   // ---------- base64 unicode-safe encode/decode ----------
   function toBase64(obj){
@@ -347,7 +396,7 @@
   }
 
   // ---------- navigation ----------
-  const steps = ['name','lists','share','compare','final','recap'];
+  const steps = ['name','lists','share','compare','sort','final','recap'];
   const navButtons = {};
   document.querySelectorAll('nav.steps button').forEach(b=>{
     navButtons[b.dataset.step] = b;
@@ -361,6 +410,7 @@
     });
     if(step==='share') renderShare();
     if(step==='compare') renderCompare();
+    if(step==='sort') renderSort();
     if(step==='final') renderFinal();
     if(step==='recap') renderRecap();
     window.scrollTo({top:0, behavior:'smooth'});
@@ -436,7 +486,9 @@
   function currentShareCode(){
     return toBase64({
       n: me.name, g: me.girls||[], b: me.boys||[],
-      fg: me.finalGirls||[], fb: me.finalBoys||[]
+      fg: me.finalGirls||[], fb: me.finalBoys||[],
+      dg: (me.decisions && me.decisions.girls) || {},
+      db: (me.decisions && me.decisions.boys) || {}
     });
   }
 
@@ -486,7 +538,10 @@
     try{
       const data = fromBase64(code.trim());
       if(!data || !data.n) throw new Error('invalid');
-      partner = { name: data.n, girls: data.g||[], boys: data.b||[], finalGirls: data.fg||[], finalBoys: data.fb||[] };
+      partner = {
+        name: data.n, girls: data.g||[], boys: data.b||[], finalGirls: data.fg||[], finalBoys: data.fb||[],
+        decisions: { girls: data.dg||{}, boys: data.db||{} }
+      };
       savePartner(partner);
       return true;
     }catch(e){
@@ -592,28 +647,169 @@
         <div>${block('Garçons', '💙', b, me.name, partner.name)}</div>
       </div>
       <div class="row-btns" style="margin-top:20px;">
-        <button class="btn" id="go-final">Passer au choix final →</button>
+        <button class="btn" id="go-final">Passer au tri →</button>
       </div>
     `;
-    document.getElementById('go-final').addEventListener('click', ()=> showStep('final'));
+    document.getElementById('go-final').addEventListener('click', ()=> showStep('sort'));
   }
 
-  // ---------- STEP 5: final choice ----------
+  // ---------- export ----------
+  function buildExportText(){
+    const partnerGirls = partner ? partner.girls||[] : [];
+    const partnerBoys = partner ? partner.boys||[] : [];
+    const g = matchSets(me.girls||[], partnerGirls);
+    const b = matchSets(me.boys||[], partnerBoys);
+    const lines = [];
+    lines.push(`👶 Liste complète des prénoms — ${me.name}${partner ? ' & ' + partner.name : ''}`);
+    lines.push('');
+    function section(title, res){
+      lines.push(title);
+      lines.push(`  En commun (${res.common.length}) : ${res.common.join(', ') || '—'}`);
+      lines.push(`  ${me.name} uniquement (${res.onlyA.length}) : ${res.onlyA.join(', ') || '—'}`);
+      if(partner) lines.push(`  ${partner.name} uniquement (${res.onlyB.length}) : ${res.onlyB.join(', ') || '—'}`);
+      lines.push('');
+    }
+    section('💗 FILLES', g);
+    section('💙 GARÇONS', b);
+
+    const girlPool = unionPool(me.girls||[], partnerGirls);
+    const boyPool = unionPool(me.boys||[], partnerBoys);
+    const hasDecisions = Object.keys(me.decisions.girls||{}).length || Object.keys(me.decisions.boys||{}).length ||
+      (partner && partner.decisions && (Object.keys(partner.decisions.girls||{}).length || Object.keys(partner.decisions.boys||{}).length));
+    if(hasDecisions){
+      lines.push('--- TRI (garder / éliminer) ---');
+      [['girls','💗 Filles', girlPool], ['boys','💙 Garçons', boyPool]].forEach(([cat, label, pool])=>{
+        const kept = pool.filter(i=>!isEliminated(cat, i.key)).map(i=>i.label);
+        const eliminated = pool.filter(i=>isEliminated(cat, i.key)).map(i=>i.label);
+        lines.push(`  ${label} — encore en lice (${kept.length}) : ${kept.join(', ') || '—'}`);
+        lines.push(`  ${label} — éliminés (${eliminated.length}) : ${eliminated.join(', ') || '—'}`);
+      });
+    }
+    return lines.join('\n');
+  }
+
+  document.getElementById('export-btn').addEventListener('click', ()=>{
+    if(!me.name || !(me.girls||[]).length){ alert("Complète d'abord ton prénom et tes listes (étapes 1 et 2)."); showStep('lists'); return; }
+    document.getElementById('export-text').value = buildExportText();
+    document.getElementById('export-box').style.display = 'block';
+  });
+  document.getElementById('export-copy').addEventListener('click', ()=>{
+    copyToClipboard(document.getElementById('export-text').value);
+  });
+  document.getElementById('export-download').addEventListener('click', ()=>{
+    const text = document.getElementById('export-text').value;
+    const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'prenoms-' + norm(me.name||'liste').replace(/\s+/g,'-') + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  // ---------- STEP 5: sort (garder / éliminer) ----------
   function unionPool(listA, listB){
-    const seen = new Map(); // normKey -> {label, common}
+    const seen = new Map(); // normKey -> {label, common, key}
     listA.forEach(n=>{
       const k = norm(n);
-      seen.set(k, {label:n, common:false});
+      seen.set(k, {label:n, common:false, key:k});
     });
     listB.forEach(n=>{
       const k = norm(n);
       if(seen.has(k)) seen.get(k).common = true;
-      else seen.set(k, {label:n, common:false});
+      else seen.set(k, {label:n, common:false, key:k});
     });
     return Array.from(seen.values()).sort((x,y)=>{
       if(x.common !== y.common) return x.common ? -1 : 1;
       return x.label.localeCompare(y.label,'fr');
     });
+  }
+
+  function setDecision(category, key, status){
+    if(!me.decisions[category]) me.decisions[category] = {};
+    if(me.decisions[category][key] === status){
+      delete me.decisions[category][key];
+    } else {
+      me.decisions[category][key] = status;
+    }
+    saveMe(me);
+  }
+
+  function isEliminated(category, key){
+    const mineStatus = me.decisions[category] ? me.decisions[category][key] : undefined;
+    const theirStatus = partner && partner.decisions[category] ? partner.decisions[category][key] : undefined;
+    return mineStatus === 'eliminate' || theirStatus === 'eliminate';
+  }
+
+  function renderSort(){
+    const el = document.getElementById('sort-content');
+    if(!me.name || !(me.girls||[]).length){
+      el.innerHTML = `<div class="placeholder">Complète d'abord tes listes. <a>Aller à l'étape 2</a></div>`;
+      el.querySelector('a').addEventListener('click', ()=>showStep('lists'));
+      return;
+    }
+    const partnerGirls = partner ? partner.girls||[] : [];
+    const partnerBoys = partner ? partner.boys||[] : [];
+    const girlPool = unionPool(me.girls||[], partnerGirls);
+    const boyPool = unionPool(me.boys||[], partnerBoys);
+
+    function partnerMark(status){
+      if(!partner) return '';
+      if(status==='keep') return `<span class="sort-partner">❤️ ${escapeHtml(partner.name)} garde</span>`;
+      if(status==='eliminate') return `<span class="sort-partner">🚫 ${escapeHtml(partner.name)} élimine</span>`;
+      return `<span class="sort-partner">${escapeHtml(partner.name)} : pas encore décidé</span>`;
+    }
+
+    function rows(pool, category){
+      return pool.map(item=>{
+        const mine = me.decisions[category][item.key];
+        const theirs = partner ? partner.decisions[category][item.key] : undefined;
+        const disagree = mine && theirs && mine !== theirs;
+        return `<div class="sort-row ${disagree?'disagree':''}">
+          <span class="sort-name">${escapeHtml(item.label)}${item.common?' <span class="badge-common">commun ❤️</span>':''}</span>
+          <div class="sort-actions">
+            <button type="button" class="tri-btn keep ${mine==='keep'?'active':''}" data-cat="${category}" data-key="${item.key}" data-status="keep">✅ Garder</button>
+            <button type="button" class="tri-btn eliminate ${mine==='eliminate'?'active':''}" data-cat="${category}" data-key="${item.key}" data-status="eliminate">❌ Éliminer</button>
+          </div>
+          ${partnerMark(theirs)}
+        </div>`;
+      }).join('');
+    }
+
+    function summary(pool, category){
+      const eliminated = pool.filter(i=>isEliminated(category,i.key)).length;
+      const kept = pool.length - eliminated;
+      return `<div class="sort-summary">${eliminated} éliminé(s) · ${kept} encore en lice sur ${pool.length}</div>`;
+    }
+
+    el.innerHTML = `
+      ${!partner ? '<div class="banner warn">⚠️ Sans la liste de ton/ta partenaire, tu ne tries que tes propres prénoms.</div>' : ''}
+      <div class="two-col">
+        <div>
+          <div class="group-title">💗 Filles</div>
+          ${summary(girlPool,'girls')}
+          ${rows(girlPool,'girls')}
+        </div>
+        <div>
+          <div class="group-title">💙 Garçons</div>
+          ${summary(boyPool,'boys')}
+          ${rows(boyPool,'boys')}
+        </div>
+      </div>
+      <div class="row-btns" style="margin-top:20px;">
+        <button class="btn" id="go-final-from-sort">Passer au choix final →</button>
+      </div>
+    `;
+
+    el.querySelectorAll('.tri-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        setDecision(btn.dataset.cat, btn.dataset.key, btn.dataset.status);
+        renderSort();
+      });
+    });
+    document.getElementById('go-final-from-sort').addEventListener('click', ()=> showStep('final'));
   }
 
   function renderFinal(){
@@ -625,8 +821,11 @@
     }
     const partnerGirls = partner ? partner.girls||[] : [];
     const partnerBoys = partner ? partner.boys||[] : [];
-    const girlPool = unionPool(me.girls||[], partnerGirls);
-    const boyPool = unionPool(me.boys||[], partnerBoys);
+    const girlPoolAll = unionPool(me.girls||[], partnerGirls);
+    const boyPoolAll = unionPool(me.boys||[], partnerBoys);
+    const girlPool = girlPoolAll.filter(i=>!isEliminated('girls', i.key));
+    const boyPool = boyPoolAll.filter(i=>!isEliminated('boys', i.key));
+    const eliminatedCount = (girlPoolAll.length - girlPool.length) + (boyPoolAll.length - boyPool.length);
 
     function checklist(pool, groupName, currentSelection){
       return pool.map(item=>{
@@ -641,6 +840,7 @@
 
     el.innerHTML = `
       ${!partner ? '<div class="banner warn">⚠️ Tu n\'as pas encore importé la liste de ton/ta partenaire — ceci n\'affichera que tes propres prénoms.</div>' : ''}
+      ${eliminatedCount>0 ? `<div class="hint">🚫 ${eliminatedCount} prénom(s) éliminé(s) au tri ne sont pas proposés ici. <a id="back-to-sort">Revoir le tri</a></div>` : ''}
       <div class="two-col">
         <div>
           <div class="group-title">💗 Filles — choisis jusqu'à 2</div>
@@ -656,6 +856,8 @@
       </div>
       <p class="status-line" id="final-status"></p>
     `;
+    const backToSort = document.getElementById('back-to-sort');
+    if(backToSort) backToSort.addEventListener('click', ()=> showStep('sort'));
 
     function enforceLimit(group){
       const boxes = el.querySelectorAll(`input[data-group="${group}"]`);
